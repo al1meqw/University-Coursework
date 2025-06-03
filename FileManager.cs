@@ -8,14 +8,14 @@ using System.Text.Json;
 namespace UniversityApp
 {
 
-    /// Клас для роботи з файлами - збереження та завантаження даних університетів
+    // Клас для роботи з файлами - збереження та завантаження даних університетів
     public class FileManager
     {
         private const string DefaultFilePath = "universities.json";
         private const string BackupExtension = ".backup";
 
 
-        /// Зберігає список університетів у JSON файл
+        // Зберігає список університетів у JSON файл
         public static bool Save(string filePath, List<University> universities)
         {
             try
@@ -65,7 +65,7 @@ namespace UniversityApp
         }
 
 
-        /// Завантажує список університетів з JSON файлу
+        // Завантажує список університетів з JSON файлу
         public static List<University> Load(string filePath)
         {
             try
