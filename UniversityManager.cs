@@ -391,5 +391,204 @@ namespace UniversityApp
                 return new Dictionary<string, int>();
             }
         }
+      // Пошук університетів за спеціальністю
+        public List<University> FindBySpecialty(string specialtyName)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(specialtyName))
+                    return new List<University>();
+
+                return Universities
+                    .Where(u => u.Specialties.Any(s =>
+                        s.Name.Contains(specialtyName, StringComparison.OrdinalIgnoreCase)))
+                    .ToList();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Помилка при пошуку за спеціальністю: {ex.Message}");
+                return new List<University>();
+            }
+        }
+
+        // Пошук університетів за містом
+        public List<University> FindByCity(string city)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(city))
+                    return new List<University>();
+
+                return Universities
+                    .Where(u => u.City.Contains(city, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Помилка при пошуку за містом: {ex.Message}");
+                return new List<University>();
+            }
+        }
+
+        // Знаходить спеціальність з мінімальним конкурсом
+        public (string UniversityName, string SpecialtyName, string Form, double Competition)? FindMinCompetition(string? specialtyName = null)
+        {
+            try
+            {
+                var query = Universities.SelectMany(u => u.Specialties
+                    .SelectMany(s => s.Competition
+                        .Where(c => c.Value > 0)
+                        .Select(c => new
+                        {
+                            UniversityName = u.Name,
+                            SpecialtyName = s.Name,
+                            Form = c.Key,
+                            Competition = c.Value
+                        })));
+
+                if (!string.IsNullOrWhiteSpace(specialtyName))
+                {
+                    query = query.Where(x => x.SpecialtyName.Contains(specialtyName, StringComparison.OrdinalIgnoreCase));
+                }
+
+                var minCompetition = query.OrderBy(x => x.Competition).FirstOrDefault();
+
+                return minCompetition != null
+                    ? (minCompetition.UniversityName, minCompetition.SpecialtyName, minCompetition.Form, minCompetition.Competition)
+                    : null;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Помилка при пошуку мінімального конкурсу: {ex.Message}");
+                return null;
+            }
+        }
+
+        // Знаходить спеціальність з максимальним конкурсом
+        public (string UniversityName, string SpecialtyName, string Form, double Competition)? FindMaxCompetition(string? specialtyName = null)
+        {
+            try
+            {
+                var query = Universities.SelectMany(u => u.Specialties
+                    .SelectMany(s => s.Competition
+                        .Where(c => c.Value > 0)
+                        .Select(c => new
+                        {
+                            UniversityName = u.Name,
+                            SpecialtyName = s.Name,
+                            Form = c.Key,
+                            Competition = c.Value
+                        })));
+
+                if (!string.IsNullOrWhiteSpace(specialtyName))
+                {
+                    query = query.Where(x => x.SpecialtyName.Contains(specialtyName, StringComparison.OrdinalIgnoreCase));
+                }
+
+                var maxCompetition = query.OrderByDescending(x => x.Competition).FirstOrDefault();
+
+                return maxCompetition != null
+                    ? (maxCompetition.UniversityName, maxCompetition.SpecialtyName, maxCompetition.Form, maxCompetition.Competition)
+                    : null;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Помилка при пошуку максимального конкурсу: {ex.Message}");
+                return null;
+            }
+        }
+
+        // Отримує загальну статистику по базі університетів
+        public void DisplayGeneralStatistics()
+        {
+            try
+            {
+                Console.WriteLine("\n=== ЗАГАЛЬНА СТАТИСТИКА ===");
+                Console.WriteLine(new string('=', 40));
+                
+                Console.WriteLine($"Загальна кількість університетів: {Universities.Count}");
+                
+                var totalSpecialties = Universities.Sum(u => u.GetSpecialtyCount());
+                Console.WriteLine($"Загальна кількість спеціальностей: {totalSpecialties}");
+                
+                if (Universities.Any())
+                {
+                    var avgRating = Universities.Average(u => u.Rating);
+                    Console.WriteLine($"Середній рейтинг університетів: {avgRating:F2}");
+                    
+                    var bestUniversity = Universities.OrderBy(u => u.Rating).First();
+                    Console.WriteLine($"Найкращий університет: {bestUniversity.Name} (рейтинг: {bestUniversity.Rating})");
+                }
+
+                var citiesCount = Universities.Select(u => u.City).Distinct().Count();
+                Console.WriteLine($"Кількість міст: {citiesCount}");
+
+                Console.WriteLine(new string('=', 40));
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Помилка при відображенні статистики: {ex.Message}");
+            }
+        }
+
+        // Перевіряє цілісність даних
+        public bool ValidateData()
+        {
+            try
+            {
+                bool isValid = true;
+                var issues = new List<string>();
+
+                foreach (var university in Universities)
+                {
+                    if (string.IsNullOrWhiteSpace(university.Name))
+                    {
+                        issues.Add("Знайдено університет без назви");
+                        isValid = false;
+                    }
+
+                    if (university.Specialties == null)
+                    {
+                        issues.Add($"У університеті '{university.Name}' відсутній список спеціальностей");
+                        isValid = false;
+                    }
+                    else
+                    {
+                        foreach (var specialty in university.Specialties)
+                        {
+                            if (string.IsNullOrWhiteSpace(specialty.Name))
+                            {
+                                issues.Add($"У університеті '{university.Name}' знайдено спеціальність без назви");
+                                isValid = false;
+                            }
+
+                            if (specialty.Competition == null)
+                            {
+                                issues.Add($"У спеціальності '{specialty.Name}' відсутня інформація про конкурс");
+                                isValid = false;
+                            }
+                        }
+                    }
+                }
+
+                if (!isValid)
+                {
+                    Console.WriteLine("Знайдено проблеми з цілісністю даних:");
+                    foreach (var issue in issues)
+                    {
+                        Console.WriteLine($"• {issue}");
+                    }
+                }
+
+                return isValid;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Помилка при перевірці даних: {ex.Message}");
+                return false;
+            }
+        }
     }
-}       
+}
+
+              
