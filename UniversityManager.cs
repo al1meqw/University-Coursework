@@ -590,5 +590,3 @@ namespace UniversityApp
         }
     }
 }
-
-              
