@@ -1,17 +1,17 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 
 namespace UniversityApp
 {
-    /// Головний клас програми для управління базою університетів
+    // Головний клас програми для управління базою університетів
     class Program
     {
         private static UniversityManager manager = new UniversityManager();
         private static bool isRunning = true;
 
-        /// Точка входу в програму
+        // Точка входу в програму
         static void Main(string[] args)
         {
             Console.OutputEncoding = System.Text.Encoding.UTF8;
@@ -43,7 +43,7 @@ namespace UniversityApp
             Console.WriteLine("\nДякуємо за використання програми!");
         }
 
-        /// Відображає головне меню програми
+        // Відображає головне меню програми
         static void ShowMainMenu()
         {
             Console.Clear();
@@ -66,7 +66,7 @@ namespace UniversityApp
         }
 
   
-        /// Обробляє вибір користувача з головного меню
+        // Обробляє вибір користувача з головного меню
         static void ProcessMainMenuChoice()
         {
             string? input = Console.ReadLine();
@@ -121,7 +121,7 @@ namespace UniversityApp
         }
 
 
-        /// Меню додавання нового університету
+        // Меню додавання нового університету
         static void AddUniversityMenu()
         {
             Console.Clear();
@@ -165,7 +165,7 @@ namespace UniversityApp
         }
 
 
-        /// Меню додавання спеціальностей до університету
+        // Меню додавання спеціальностей до університету
         static void AddSpecialtiesMenu(University university)
         {
             Console.WriteLine("\n=== ДОДАВАННЯ СПЕЦІАЛЬНОСТЕЙ ===");
@@ -216,8 +216,73 @@ namespace UniversityApp
         static void ViewAllUniversities()
         {
             Console.Clear();
-            manager.DisplayAll();
+
+            if (!manager.Universities.Any())
+            {
+                Console.WriteLine("Список університетів порожній.");
+                PauseAndContinue();
+                return;
+            }
+
+            Console.WriteLine("Список університетів:\n");
+
+            for (int i = 0; i < manager.Universities.Count; i++)
+            {
+                Console.WriteLine($"{i + 1}. {manager.Universities[i].Name}");
+            }
+
+            Console.Write("\nВведіть номер для перегляду деталей або Enter для виходу: ");
+            string? input = Console.ReadLine()?.Trim();
+
+            if (int.TryParse(input, out int index) &&
+                index >= 1 && index <= manager.Universities.Count)
+            {
+                ViewUniversityDetails(manager.Universities[index - 1]);
+            }
+        }
+
+
+        static void ViewUniversityDetails(University university)
+        {
+            Console.Clear();
+            Console.WriteLine($"== {university.Name} ==");
+            Console.WriteLine($"Адреса: {university.Address}");
+            Console.WriteLine($"Місто: {university.City}");
+            Console.WriteLine($"Рейтинг: {university.Rating}");
+            Console.WriteLine($"Кількість спеціальностей: {university.Specialties.Count}");
+
+            Console.WriteLine("\nСпеціальності:");
+            for (int i = 0; i < university.Specialties.Count; i++)
+            {
+                Console.WriteLine($"{i + 1}. {university.Specialties[i].Name}");
+            }
+
+            Console.Write("\nВведіть номер спеціальності для перегляду або Enter: ");
+            string? input = Console.ReadLine()?.Trim();
+
+            if (int.TryParse(input, out int index) &&
+                index >= 1 && index <= university.Specialties.Count)
+            {
+                ViewSpecialtyDetails(university.Specialties[index - 1]);
+            }
+
             PauseAndContinue();
+        }
+
+        static void ViewSpecialtyDetails(Specialty specialty)
+        {
+            Console.Clear();
+            Console.WriteLine($"== Спеціальність: {specialty.Name} ==\n");
+
+            string[] forms = { "денна", "вечірня", "заочна" };
+
+            foreach (string form in forms)
+            {
+                double comp = specialty.GetCompetition(form);
+                double cost = specialty.GetCost(form);
+
+                Console.WriteLine($"• {form} — конкурс: {comp}, вартість: {cost} грн");
+            }
         }
 
         // Пошук університету за назвою
@@ -225,7 +290,7 @@ namespace UniversityApp
         {
             Console.Clear();
             Console.WriteLine("=== ПОШУК УНІВЕРСИТЕТУ ===\n");
-            
+
             Console.Write("Введіть назву або частину назви університету: ");
             string? name = Console.ReadLine()?.Trim();
 
@@ -316,7 +381,7 @@ namespace UniversityApp
                 updatedUniversity.Rating = existingUniversity.Rating;
             }
 
-            // Копіюємо спеціальності (або можна реалізувати окреме меню редагування)
+            // Копіюємо спеціальності 
             updatedUniversity.Specialties = existingUniversity.Specialties;
 
             if (manager.EditUniversityByIndex(index, updatedUniversity))
@@ -325,9 +390,63 @@ namespace UniversityApp
             }
 
             PauseAndContinue();
+
+            Console.Write("\nБажаєте редагувати спеціальності? (y/n): ");
+            if (Console.ReadLine()?.ToLower() == "y")
+            {
+                updatedUniversity.Specialties = EditSpecialties(existingUniversity.Specialties);
+            }
+            else
+            {
+                updatedUniversity.Specialties = existingUniversity.Specialties;
+            }
         }
 
+         // Редагування кожної спеціальності вручну
+        static List<Specialty> EditSpecialties(List<Specialty> specialties)
+        {
+            var updated = new List<Specialty>();
 
+            for (int i = 0; i < specialties.Count; i++)
+            {
+                Console.WriteLine($"\n{i + 1}. {specialties[i].Name}");
+            }
+
+            Console.WriteLine("\nРедагування спеціальностей:");
+            for (int i = 0; i < specialties.Count; i++)
+            {
+                var spec = specialties[i];
+                Console.WriteLine($"\n== {spec.Name} ==");
+
+                Console.Write($"Нова назва [{spec.Name}]: ");
+                string? newName = Console.ReadLine()?.Trim();
+                if (!string.IsNullOrEmpty(newName))
+                    spec.Name = newName;
+
+                string[] forms = { "денна", "вечірня", "заочна" };
+
+                foreach (string form in forms)
+                {
+                    Console.Write($"Конкурс ({form}) [{spec.GetCompetition(form)}]: ");
+                    string? input = Console.ReadLine();
+                    if (double.TryParse(input, out double newComp))
+                    {
+                        spec.SetCompetition(form, newComp);
+                    }
+
+                    Console.Write($"Вартість ({form}) [{spec.GetCost(form)}]: ");
+                    input = Console.ReadLine();
+                    if (double.TryParse(input, out double newCost))
+                    {
+                        spec.SetCost(form, newCost);
+                    }
+                }
+
+                updated.Add(spec);
+            }
+
+            return updated;
+        }
 
         // Меню видалення університету за номером зі списку
         static void DeleteUniversityMenu()
