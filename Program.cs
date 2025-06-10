@@ -37,10 +37,6 @@ namespace UniversityApp
                     Console.ReadKey();
                 }
             }
-
-            // Зберігаємо дані при виході
-            SaveData();
-            Console.WriteLine("\nДякуємо за використання програми!");
         }
 
         // Відображає головне меню програми
