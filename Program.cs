@@ -162,12 +162,15 @@ namespace UniversityApp
 
 
         // Меню додавання спеціальностей до університету
-        static void AddSpecialtiesMenu(University university)
+        static void AddSpecialtiesMenu(University university, bool askFirst = true)
         {
             Console.WriteLine("\n=== ДОДАВАННЯ СПЕЦІАЛЬНОСТЕЙ ===");
-            Console.Write("Бажаете додати спеціальності? (y/n): ");
-            
-            if (Console.ReadLine()?.ToLower() != "y") return;
+
+            if (askFirst)
+            {
+               Console.Write("Бажаете додати спеціальності? (y/n): ");
+               if (Console.ReadLine()?.ToLower() != "y") return;
+            }
 
             while (true)
             {
@@ -237,7 +240,7 @@ namespace UniversityApp
             }
         }
 
-
+        //детальний перегляд університету
         static void ViewUniversityDetails(University university)
         {
             Console.Clear();
@@ -265,6 +268,7 @@ namespace UniversityApp
             PauseAndContinue();
         }
 
+        //детальний перегляд спеціальностей
         static void ViewSpecialtyDetails(Specialty specialty)
         {
             Console.Clear();
@@ -385,6 +389,7 @@ namespace UniversityApp
                 Console.WriteLine("Університет успішно оновлено!");
             }
 
+
             PauseAndContinue();
 
             Console.Write("\nБажаєте редагувати спеціальності? (y/n): ");
@@ -396,23 +401,46 @@ namespace UniversityApp
             {
                 updatedUniversity.Specialties = existingUniversity.Specialties;
             }
-        }
 
-         // Редагування кожної спеціальності вручну
-        static List<Specialty> EditSpecialties(List<Specialty> specialties)
-        {
-            var updated = new List<Specialty>();
-
-            for (int i = 0; i < specialties.Count; i++)
+            Console.Write("Бажаете додати спеціальності? (y/n): ");
+            if (Console.ReadLine()?.ToLower() == "y")
             {
-                Console.WriteLine($"\n{i + 1}. {specialties[i].Name}");
+                AddSpecialtiesMenu(updatedUniversity, false);
             }
 
-            Console.WriteLine("\nРедагування спеціальностей:");
-            for (int i = 0; i < specialties.Count; i++)
+        }
+
+        // Редагування кожної спеціальності вручну
+        static List<Specialty> EditSpecialties(List<Specialty> specialties)
+        {
+            var updated = specialties.ToList(); // копія
+
+            while (true)
             {
-                var spec = specialties[i];
-                Console.WriteLine($"\n== {spec.Name} ==");
+                Console.Clear();
+                Console.WriteLine("=== РЕДАГУВАННЯ СПЕЦІАЛЬНОСТЕЙ ===");
+
+                for (int i = 0; i < updated.Count; i++)
+                {
+                    Console.WriteLine($"{i + 1}. {updated[i].Name}");
+                }
+
+                Console.Write("\nВведіть номер спеціальності для редагування (або 0 для виходу): ");
+                string? input = Console.ReadLine();
+
+                if (!int.TryParse(input, out int index) || index < 0 || index > updated.Count)
+                {
+                    Console.WriteLine("Невірне число. Спробуйте ще раз.");
+                    PauseAndContinue();
+                    continue;
+                }
+
+                if (index == 0)
+                    break;
+
+                var spec = updated[index - 1];
+
+                Console.WriteLine($"\nРедагування спеціальності: {spec.Name}");
 
                 Console.Write($"Нова назва [{spec.Name}]: ");
                 string? newName = Console.ReadLine()?.Trim();
@@ -420,11 +448,10 @@ namespace UniversityApp
                     spec.Name = newName;
 
                 string[] forms = { "денна", "вечірня", "заочна" };
-
                 foreach (string form in forms)
                 {
                     Console.Write($"Конкурс ({form}) [{spec.GetCompetition(form)}]: ");
-                    string? input = Console.ReadLine();
+                    input = Console.ReadLine();
                     if (double.TryParse(input, out double newComp))
                     {
                         spec.SetCompetition(form, newComp);
@@ -438,7 +465,8 @@ namespace UniversityApp
                     }
                 }
 
-                updated.Add(spec);
+                Console.WriteLine("Редагування завершено.");
+                PauseAndContinue();
             }
 
             return updated;
@@ -869,7 +897,6 @@ namespace UniversityApp
         static void LoadData()
         {
             manager.Universities = FileManager.LoadFromFile();
-            Console.WriteLine("Дані завантажено!");
         }
 
         // Збереження у користувацький файл
@@ -886,7 +913,7 @@ namespace UniversityApp
 
             if (FileManager.Save(filePath, manager.Universities))
             {
-                Console.WriteLine($"Дані успішно збережено у файл: {filePath}");
+                Console.WriteLine($"Дані збережено у файл: {filePath}");
             }
             else
             {
@@ -947,6 +974,7 @@ namespace UniversityApp
             if (Console.ReadLine()?.ToLower() == "y")
             {
                 SaveData();
+                Console.WriteLine("\nДякуємо за використання програми!");
             }
             
             isRunning = false;
